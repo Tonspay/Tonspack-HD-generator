@@ -11,19 +11,10 @@ import * as solanaWeb3 from "@solana/web3.js";
 import * as tonCrypto from "@ton/crypto";
 const keyPairFromSecretKey = tonCrypto.keyPairFromSecretKey;
 import * as _ton from "@ton/ton";
+import { MessageRelaxed} from "@ton/core";
 
 const DEFAULT_PASSWORDLENGTH = 8; //The length of encryption number
 
-//To generate a totally new account
-const randomAccount = async () => {
-  const _w = new Web3();
-  return _w.eth.accounts.create();
-}
-//Recover account from seeds
-const seedToAccount = (seed:string) => {
-  const _w = new Web3();
-  return _w.eth.accounts.privateKeyToAccount(seed);
-}
 //Base encryption with CBC-Pkcs7
 const aesEncrypt = (message:any, key:any) => {
   const iv = CryptoJS.enc.Utf8.parse(key);
@@ -124,7 +115,7 @@ interface objActionRawData {
  * Transaction Type
  */
 interface objTonTxn {
-  v: BigInt | number;
+  v: bigint | number;
   t: string;
   d: string;
 }
@@ -161,7 +152,7 @@ const evm = {
             const gasPrice = await w3.eth.getGasPrice();
             const nonce = await w3.eth.getTransactionCount(kp.evmKp.address);
       
-            var transaction = {
+            const transaction = {
               to: txns.t,
               value: 0,
               gas,
@@ -242,7 +233,7 @@ const sol = {
       } else {
         txs = tx.d;
       }
-      for (var u = 0; u < txs.length; u++) {
+      for (let u = 0; u < txs.length; u++) {
         const ele = txs[u];
   
         const rawSign = new Uint8Array(bs58.decode(ele.d));
@@ -267,7 +258,7 @@ const sol = {
             simulate.value.logs &&
             simulate.value.logs
           ) {
-            var addFee = true;
+            let addFee = true;
   
             simulate.value.logs.forEach((ele) => {
               if (
@@ -306,7 +297,7 @@ const sol = {
   
           //Transaction
           if (!realTx.recentBlockhash) {
-            let blockhashObj = await conn.getRecentBlockhash();
+            const blockhashObj = await conn.getRecentBlockhash();
   
             realTx.recentBlockhash = blockhashObj.blockhash;
           }
@@ -366,20 +357,18 @@ async signAndSendTxn(kp: objKP, tx: objActionRawData, rpc: string) {
       endpoint: rpc,
     });
 
-    let keyPair = keyPairFromSecretKey(Buffer.from(kp.naclKp.secretKey));
-    let workchain = 0;
-    let wallet = _ton.WalletContractV4.create({
+    const keyPair = keyPairFromSecretKey(Buffer.from(kp.naclKp.secretKey));
+    const workchain = 0;
+    const wallet = _ton.WalletContractV4.create({
       workchain,
       publicKey: keyPair.publicKey,
     });
-    let contract = client.open(wallet);
-    let seqno = await contract.getSeqno();
+    const contract = client.open(wallet);
+    const seqno = await contract.getSeqno();
 
     const txn = JSON.parse(tx.d) as objTonTxn[];
 
-    let msg: any[];
-
-    msg = [];
+    const msg: MessageRelaxed[] = [];
 
     txn.forEach((e) => {
       msg.push(
@@ -392,7 +381,7 @@ async signAndSendTxn(kp: objKP, tx: objActionRawData, rpc: string) {
       );
     });
     if (msg.length > 0) {
-      const ret = await contract.sendTransfer({
+      await contract.sendTransfer({
         seqno,
         secretKey: keyPair.secretKey,
         messages: msg,
@@ -442,7 +431,7 @@ export class HDWallet {
   }
   // New HDwallet auto generate wallets from a random keypair and return data
   public constructor(init?:initObj) {
-      let initKp = randomHDKey()
+      const initKp = randomHDKey()
       this.rawKp = initKp;
       this.pwd = ""
       this.path = this.defaultPath;
